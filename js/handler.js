@@ -1,0 +1,4 @@
+//Brain Handler.
+
+init();
+animate();
