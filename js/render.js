@@ -6,16 +6,25 @@
 
 	var mouseX = 0, mouseY = 0;
 
+	var targetRotation = 0;
+	var targetRotationOnMouseDown = 0;
+
+	var mouseX = 0;
+	var mouseXOnMouseDown = 0;
+
 	var windowHalfX = window.innerWidth / 2;
 	var windowHalfY = window.innerHeight / 2;
 
+	var brain_obj;
+
 function init() // Initialitations of ThreeJS params.
 {
+
 	container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-	camera.position.z = 4;
+	camera.position.z = 10;
 
 	// scene
 
@@ -32,6 +41,7 @@ function init() // Initialitations of ThreeJS params.
 	var objectLoader = new THREE.ObjectLoader();
 	objectLoader.load("obj/teapot-claraio.json", function ( obj ) {
 	 	scene.add( obj );
+		console.log(scene);
 	} );
 	// END Clara.io JSON loader code
 
@@ -40,11 +50,20 @@ function init() // Initialitations of ThreeJS params.
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	container.appendChild( renderer.domElement );
 
-	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+	renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
+	renderer.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
+	renderer.domElement.addEventListener( 'touchstart', onDocumentTouchStart, false );
+	renderer.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false );
+
+	renderer.domElement.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+	renderer.domElement.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+	renderer.domElement.removeEventListener( 'mouseout', onDocumentMouseOut, false );
 
 	//
 
 	window.addEventListener( 'resize', onWindowResize, false );
+
+
 }
 
 function onWindowResize() {
@@ -59,11 +78,55 @@ function onWindowResize() {
 
 }
 
+/*-------------Mouse Events-------------*/
+function onDocumentMouseDown( event ) {
+
+	event.preventDefault();
+
+	renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
+	renderer.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
+	renderer.domElement.addEventListener( 'mouseout', onDocumentMouseOut, false );
+
+	mouseXOnMouseDown = event.clientX - windowHalfX;
+	targetRotationOnMouseDown = targetRotation;
+
+}
+
+/*-------------Eventos de rotacion con el moviento del mouse-------------*/
 function onDocumentMouseMove( event ) {
+	mouseX = event.clientX - windowHalfX;
+	targetRotation = targetRotationOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.02;
+}
 
-	mouseX = ( event.clientX - windowHalfX ) / 2;
-	mouseY = ( event.clientY - windowHalfY ) / 2;
+/*-------------Eventos de click Up-------------*/
+function onDocumentMouseUp( event ) {
+	renderer.domElement.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+	renderer.domElement.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+	renderer.domElement.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+}
 
+/*-------------Eventos de MouseOut-------------*/
+function onDocumentMouseOut( event ) {
+	renderer.domElement.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+	renderer.domElement.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+	renderer.domElement.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+}
+
+/*--------------Eventos de Touch PAD-------------*/
+function onDocumentTouchStart( event ) {
+	if ( event.touches.length == 1 ) {
+		event.preventDefault();
+		mouseXOnMouseDown = event.touches[ 0 ].pageX - windowHalfX;
+		targetRotationOnMouseDown = targetRotation;
+	}
+}
+
+function onDocumentTouchMove( event ) {
+	if ( event.touches.length == 1 ) {
+		event.preventDefault();
+		mouseX = event.touches[ 0 ].pageX - windowHalfX;
+		targetRotation = targetRotationOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.05;
+	}
 }
 
 
@@ -80,8 +143,11 @@ function animate()
 
 function render()
 {
-	camera.position.x += ( mouseX - camera.position.x ) * .05;
-	camera.position.y += ( - mouseY - camera.position.y ) * .05;
+	// camera.position.x += ( mouseX - camera.position.x ) * .05;
+	// camera.position.y += ( - mouseY - camera.position.y ) * .05;
+	var objeto = scene.getObjectById( 2, true );
+
+	objeto.rotation.y += ( targetRotation - objeto.rotation.y ) * 0.05;
 
 	camera.lookAt( scene.position );
 
